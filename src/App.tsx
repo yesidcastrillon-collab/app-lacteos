@@ -67,30 +67,7 @@ export default function App() {
     userAnswer: null,
     generatedImageUrl: null,
     isGeneratingImage: false,
-    imageSize: '1K',
   });
-
-  const [hasKey, setHasKey] = useState<boolean>(false);
-  const [isCheckingKey, setIsCheckingKey] = useState(true);
-
-  useEffect(() => {
-    checkApiKey();
-  }, []);
-
-  const checkApiKey = async () => {
-    if (window.aistudio) {
-      const selected = await window.aistudio.hasSelectedApiKey();
-      setHasKey(selected);
-    }
-    setIsCheckingKey(false);
-  };
-
-  const handleOpenKeySelector = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setHasKey(true);
-    }
-  };
 
   const generateQuestion = async (eslabon: Eslabon) => {
     setState(prev => ({ ...prev, view: 'question', currentEslabon: eslabon, currentQuestion: null, generatedImageUrl: null }));
@@ -143,23 +120,19 @@ export default function App() {
   };
 
   const generateImage = async (description: string) => {
-    if (!hasKey) return;
-    
     setState(prev => ({ ...prev, isGeneratingImage: true }));
     
-    // Create a new instance to ensure latest key
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
+        model: 'gemini-2.5-flash-image',
         contents: {
           parts: [{ text: `Technical illustration for Colombian milk traceability (Decree 616): ${description}. Realistic, professional, educational style.` }],
         },
         config: {
           imageConfig: {
-            aspectRatio: "16:9",
-            imageSize: state.imageSize
+            aspectRatio: "16:9"
           }
         }
       });
@@ -173,9 +146,6 @@ export default function App() {
       }
     } catch (error: any) {
       console.error("Error generating image:", error);
-      if (error.message?.includes("Requested entity was not found")) {
-        setHasKey(false);
-      }
       setState(prev => ({ ...prev, isGeneratingImage: false }));
     }
   };
@@ -188,37 +158,6 @@ export default function App() {
     setState(prev => ({ ...prev, view: 'menu', currentEslabon: null, currentQuestion: null, userAnswer: null, generatedImageUrl: null }));
   };
 
-  if (isCheckingKey) {
-    return (
-      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
-
-  if (!hasKey) {
-    return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md bg-white p-8 rounded-2xl shadow-sm border border-black/5">
-          <Settings className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Configuración Requerida</h1>
-          <p className="text-gray-600 mb-6">
-            Para generar las imágenes ilustrativas técnicas, esta aplicación requiere una clave de API de Google Cloud (con facturación habilitada).
-          </p>
-          <button
-            onClick={handleOpenKeySelector}
-            className="w-full bg-emerald-600 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
-          >
-            Seleccionar Clave de API
-          </button>
-          <p className="mt-4 text-xs text-gray-400">
-            Consulta la <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline">documentación de facturación</a> para más detalles.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#F5F5F5] text-gray-900 font-sans selection:bg-emerald-100">
       {/* Header */}
@@ -229,24 +168,6 @@ export default function App() {
               <Milk className="w-5 h-5 text-white" />
             </div>
             <h1 className="font-semibold tracking-tight text-lg">Prompt Maestro: Trazabilidad Láctea</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <select 
-              value={state.imageSize}
-              onChange={(e) => setState(prev => ({ ...prev, imageSize: e.target.value as any }))}
-              className="text-sm border border-black/10 rounded-lg px-2 py-1 bg-white outline-none focus:ring-2 focus:ring-emerald-500/20"
-            >
-              <option value="1K">Calidad 1K</option>
-              <option value="2K">Calidad 2K</option>
-              <option value="4K">Calidad 4K</option>
-            </select>
-            <button 
-              onClick={handleOpenKeySelector}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
-              title="Cambiar Clave de API"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </header>

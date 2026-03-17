@@ -20,5 +20,4 @@ export interface AppState {
   userAnswer: string | null;
   generatedImageUrl: string | null;
   isGeneratingImage: boolean;
-  imageSize: '1K' | '2K' | '4K';
 }
